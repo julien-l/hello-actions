@@ -84,7 +84,7 @@ jobs:
           clean: false # preserve existing files
 
   bundle:
-    # needs: release
+    needs: release
     runs-on: macos-latest
     name: Bundle frameworks
     steps:
