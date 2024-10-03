@@ -43,8 +43,6 @@ assert version >= "11.3.3", f"Current version is too old (minimum: 11.3.3, curre
 print(f"Bundle frameworks? {args.bundle_frameworks}")
 print(f"Scanning dir '{args.input_dir}'")
 
-exit()
-
 def ensure_dir(*args):
     dir = Path(*args)
     if not dir.exists():

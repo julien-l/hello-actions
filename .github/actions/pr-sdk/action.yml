@@ -33,7 +33,6 @@ runs:
         git config --global user.name "${{ github.actor }}"
         git config --global user.email "${{ github.actor }}@users.noreply.github.com"
         git switch -c $new_branch
-        git pull origin $new_branch
         rsync -azvh ${{ inputs.examples_dir }}/ examples/ --delete --filter='P README.md'
         git add examples/
         rsync -azvh ${{ inputs.headers_dir }}/ include/ --delete
