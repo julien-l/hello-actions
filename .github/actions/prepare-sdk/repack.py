@@ -218,7 +218,7 @@ def compute_doc_folders(zip: Path, artifact_dir: Path, basedir: Path):
 
 def extract_lib_zip(zip: Path, asset_name: str):
     """
-    Extract artifacts that are C/C++ archives
+    Extract artifacts that are not Xcode frameworks or python wheels
     """
     asset_dir = ensure_dir(tmp_dir / asset_name)
     artifact_dir = ensure_dir(tmp_dir / zip.stem)
@@ -235,6 +235,12 @@ def extract_lib_zip(zip: Path, asset_name: str):
 
 
 def extract_framework_zip(zip: Path):
+    """
+    Extract Xcode frameworks
+
+    Only sync the examples folders.
+    Do not move the framework folders, as we will bundle them later.
+    """
     artifact_dir = ensure_dir(tmp_dir / zip.stem)
     extract_zip(zip, artifact_dir)
     sync_folder(artifact_dir.joinpath("examples"), examples_dir)
@@ -248,7 +254,7 @@ python_wheel_re = re.compile(r"pyclariuscast(\d+)-wheel")
 
 def extract_wheel_zip(zip: Path, asset_name: str):
     """
-    Extract artifacts that are python wheels
+    Extract python wheels
 
     The function finds the shared library in the given wheel and moves it to the asset directory,
     inside a subfolder corresponding to the python version found in the wheel name.
@@ -279,9 +285,7 @@ def extract_wheel_zip(zip: Path, asset_name: str):
 
 
 try:
-    zip_dir = Path(args.input_dir)
-    with_frameworks = args.bundle_frameworks
-    main(zip_dir, with_frameworks)
+    main(args.input_dir, args.bundle_frameworks)
 except Exception:
     print("-" * 60)
     traceback.print_exc(file=sys.stderr)
