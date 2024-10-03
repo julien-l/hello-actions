@@ -196,7 +196,7 @@ def bundle_frameworks(asset_name: str, paths: list):
     Create a multi-platform framework
     """
     asset_dir = ensure_dir(tmp_dir / asset_name)
-    output = f"{asset_dir}/clarius_{sdk}.xcframework"
+    output = f"{asset_dir}/{sdk}_framework.xcframework"
     cmd = ["xcodebuild", "-create-xcframework"]
     for path in paths:
         cmd += ["-framework", path]
