@@ -25,7 +25,7 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     name: Release SDK
     steps:
       # To use this repository's private action, we must check out the repository first
@@ -47,7 +47,7 @@ jobs:
           repository: ${{ github.repository }}
           tag: ${{ inputs.release-id == '' && inputs.tag || '' }}
           releaseId: ${{ inputs.release-id }}
-          fileName: "${{ inputs.sdk }}_sdk_framework_*.zip"
+          fileName: "*${{ inputs.sdk }}*.zip"
           out-file-path: zips
       - name: Prepare files
         uses: ./.github/actions/prepare-sdk
@@ -56,6 +56,7 @@ jobs:
           sdk: ${{ inputs.sdk }}
           tag: ${{ inputs.tag }}
           dir: zips
+          bundle_frameworks: true
       - name: Draft PR
         uses: ./.github/actions/pr-sdk
         with:
@@ -82,33 +83,3 @@ jobs:
           token: ${{ secrets.CLARIUS_DEV_TOKEN }}
           commit-message: "Deploy documentation for ${{ inputs.tag }}"
           clean: false # preserve existing files
-
-  bundle:
-    needs: release
-    runs-on: macos-latest
-    name: Bundle frameworks
-    steps:
-      - uses: actions/checkout@v4.2.0
-      - name: Download artifacts
-        uses: robinraju/release-downloader@v1.11
-        with:
-          repository: ${{ github.repository }}
-          tag: ${{ inputs.release-id == '' && inputs.tag || '' }}
-          releaseId: ${{ inputs.release-id }}
-          fileName: "${{ inputs.sdk }}_sdk_framework_*.zip"
-          out-file-path: zips
-      - name: Prepare files
-        uses: ./.github/actions/prepare-sdk
-        id: prep-sdk
-        with:
-          sdk: ${{ inputs.sdk }}
-          tag: ${{ inputs.tag }}
-          dir: zips
-          bundle_frameworks: true
-      - name: Update release
-        uses: softprops/action-gh-release@v2.0.8
-        with:
-          repository: ${{ inputs.pub_repo_owner }}/${{ inputs.sdk }}
-          token: ${{ secrets.CLARIUS_DEV_TOKEN }}
-          tag_name: ${{ inputs.tag }}
-          files: ${{ steps.prep-sdk.outputs.assets_dir }}/*
