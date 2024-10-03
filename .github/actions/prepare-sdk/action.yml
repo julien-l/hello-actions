@@ -10,10 +10,6 @@ inputs:
   dir:
     description: Path to the folder containing the build artifacts
     required: true
-  bundle_frameworks:
-    description: Bundle Xcode frameworks (must run on macOS)
-    required: false
-    default: false
 outputs:
   assets_dir:
     description: Path to the directory containing all the generated assets
@@ -34,9 +30,5 @@ runs:
     - uses: actions/setup-python@v5.2.0
       with:
         python-version: "3.12"
-    - run: python ${{ github.action_path }}/repack.py ${{ inputs.sdk }} ${{ inputs.tag }} ${{ inputs.dir }} out
-      shell: bash
-      if: inputs.bundle_frameworks == 'false'
     - run: python ${{ github.action_path }}/repack.py ${{ inputs.sdk }} ${{ inputs.tag }} ${{ inputs.dir }} out --bundle-frameworks
       shell: bash
-      if: inputs.bundle_frameworks == 'true'

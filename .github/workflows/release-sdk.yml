@@ -56,7 +56,6 @@ jobs:
           sdk: ${{ inputs.sdk }}
           tag: ${{ inputs.tag }}
           dir: zips
-          bundle_frameworks: true
       - name: Draft PR
         uses: ./.github/actions/pr-sdk
         with:
