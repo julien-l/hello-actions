@@ -1,0 +1,114 @@
+name: Prepare an SDK release
+
+on:
+  workflow_dispatch:
+    inputs:
+      sdk:
+        description: Name of SDK to release (e.g. cast)
+        required: true
+        type: choice
+        options:
+          - cast
+          - solum
+      tag:
+        description: Release tag to publish (e.g. v10.4.0)
+        required: true
+      release-id:
+        description: |
+          Release ID, obtained using
+          `curl --silent --show-error --fail --location --header "Authorization: token $(gh auth token)" "https://api.github.com/repos/clariusmhealth/isonosw/releases"`,
+          to download artifacts from. If not provided, the version `tag` input will be used to find the release.
+      pub_repo_owner:
+        description: Owner of the target repository (e.g. clariusdev)
+        required: true
+        default: clariusdev
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Release SDK
+    steps:
+      # To use this repository's private action, we must check out the repository first
+      - uses: actions/checkout@v4.2.0
+      - uses: ./.github/actions/release-exists
+        with:
+          tag: ${{ inputs.tag }}
+          repository: ${{ inputs.pub_repo_owner }}/${{ inputs.sdk }}
+          token: ${{ secrets.CLARIUS_DEV_TOKEN }}
+        id: check-release
+      - run: |
+          echo Release ${{ inputs.tag }} already exists, aborting
+          exit 1
+        shell: bash
+        if: steps.check-release.outputs.exists == 'true'
+      - name: Download artifacts
+        uses: robinraju/release-downloader@v1.11
+        with:
+          repository: ${{ github.repository }}
+          tag: ${{ inputs.release-id == '' && inputs.tag || '' }}
+          releaseId: ${{ inputs.release-id }}
+          fileName: "${{ inputs.sdk }}_sdk_framework_*.zip"
+          out-file-path: zips
+      - name: Prepare files
+        uses: ./.github/actions/prepare-sdk
+        id: prep-sdk
+        with:
+          sdk: ${{ inputs.sdk }}
+          tag: ${{ inputs.tag }}
+          dir: zips
+      - name: Draft PR
+        uses: ./.github/actions/pr-sdk
+        with:
+          repository: ${{ inputs.pub_repo_owner }}/${{ inputs.sdk }}
+          token: ${{ secrets.CLARIUS_DEV_TOKEN }}
+          tag: ${{ inputs.tag }}
+          examples_dir: "${{ steps.prep-sdk.outputs.examples_dir }}/"
+          headers_dir: "${{ steps.prep-sdk.outputs.headers_dir }}/"
+      - name: Draft release
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          repository: ${{ inputs.pub_repo_owner }}/${{ inputs.sdk }}
+          token: ${{ secrets.CLARIUS_DEV_TOKEN }}
+          tag_name: ${{ inputs.tag }}
+          files: ${{ steps.prep-sdk.outputs.assets_dir }}/*
+          draft: true
+          prerelease: true
+          generate_release_notes: true
+      - name: Publish documentation
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: "${{ steps.prep-sdk.outputs.documentation_dir }}"
+          repository-name: ${{ inputs.pub_repo_owner }}/${{ inputs.sdk }}
+          token: ${{ secrets.CLARIUS_DEV_TOKEN }}
+          commit-message: "Deploy documentation for ${{ inputs.tag }}"
+          clean: false # preserve existing files
+
+  bundle:
+    # needs: release
+    runs-on: macos-latest
+    name: Bundle frameworks
+    steps:
+      - uses: actions/checkout@v4.2.0
+      - name: Download artifacts
+        uses: robinraju/release-downloader@v1.11
+        with:
+          repository: ${{ github.repository }}
+          tag: ${{ inputs.release-id == '' && inputs.tag || '' }}
+          releaseId: ${{ inputs.release-id }}
+          fileName: "${{ inputs.sdk }}_sdk_framework_*.zip"
+          out-file-path: zips
+      - name: Prepare files
+        uses: ./.github/actions/prepare-sdk
+        id: prep-sdk
+        with:
+          sdk: ${{ inputs.sdk }}
+          tag: ${{ inputs.tag }}
+          dir: zips
+          bundle_frameworks: true
+      - name: Update release
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          repository: ${{ inputs.pub_repo_owner }}/${{ inputs.sdk }}
+          token: ${{ secrets.CLARIUS_DEV_TOKEN }}
+          tag_name: ${{ inputs.tag }}
+          files: ${{ steps.prep-sdk.outputs.assets_dir }}/*

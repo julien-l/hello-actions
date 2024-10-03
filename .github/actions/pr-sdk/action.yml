@@ -1,0 +1,50 @@
+name: Update public SDK repo
+description: A GitHub action to create a PR in the public SDK repo with the updated source code
+inputs:
+  repository:
+    description: Target repo
+    required: true
+  token:
+    description: Target repo token with write access
+    required: true
+  tag:
+    description: Release tag (e.g. v10.4.0)
+    required: true
+  examples_dir:
+    description: Path to the new examples source code
+    required: true
+  headers_dir:
+    description: Path to the new headers
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: ksivamuthu/actions-setup-gh-cli@v3
+      if: ${{ env.ACT }}
+    - uses: actions/checkout@v4.0.0
+      with:
+        repository: ${{ inputs.repository }}
+        token: ${{ inputs.token }}
+        path: public_repo
+    - name: Update repo
+      run: |
+        new_branch=examples/${{ inputs.tag }}
+        cd public_repo/
+        git config --global user.name "${{ github.actor }}"
+        git config --global user.email "${{ github.actor }}@users.noreply.github.com"
+        git switch -c $new_branch
+        git pull origin $new_branch
+        rsync -azvh ${{ inputs.examples_dir }}/ examples/ --delete --filter='P README.md'
+        git add examples/
+        rsync -azvh ${{ inputs.headers_dir }}/ include/ --delete
+        git add include/
+        if [[ -z $(git status -s) ]]; then
+          echo "Nothing to do"
+        else
+          git commit -m "updating examples for ${{ inputs.tag }}"
+          git push origin $new_branch
+          gh pr create --draft --fill
+        fi
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}

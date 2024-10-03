@@ -1,0 +1,15 @@
+{
+  "name": "release-exists",
+  "version": "1.0.0",
+  "description": "A GitHub action to check if a release exists",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Clarius Medical Health Corp.",
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^5.1.1",
+    "@vercel/ncc": "^0.38.1"
+  }
+}

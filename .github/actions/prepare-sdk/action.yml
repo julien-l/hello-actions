@@ -1,0 +1,42 @@
+name: Prepare SDK files
+description: Extract assets from the artifact files and reorganize the files for publication on GitHub
+inputs:
+  sdk:
+    description: Name of SDK to release (e.g. cast)
+    required: true
+  tag:
+    description: Release tag (e.g. v10.4.0)
+    required: true
+  dir:
+    description: Path to the folder containing the build artifacts
+    required: true
+  bundle_frameworks:
+    description: Bundle Xcode frameworks (must run on macOS)
+    required: false
+    default: false
+outputs:
+  assets_dir:
+    description: Path to the directory containing all the generated assets
+    value: ${{ github.workspace }}/out/assets
+  examples_dir:
+    description: Path to the directory containing the example source code
+    value: ${{ github.workspace }}/out/examples
+  headers_dir:
+    description: Path to the directory containing the headers
+    value: ${{ github.workspace }}/out/include
+  documentation_dir:
+    description: Path to the directory containing the documentation, if any
+    value: ${{ github.workspace }}/out/doc
+runs:
+  using: composite
+  steps:
+    - uses: GuillaumeFalourd/setup-rsync@v1.2
+    - uses: actions/setup-python@v5.2.0
+      with:
+        python-version: "3.12"
+    - run: python ${{ github.action_path }}/repack.py ${{ inputs.sdk }} ${{ inputs.tag }} ${{ inputs.dir }} out
+      shell: bash
+      if: inputs.bundle_frameworks == 'false'
+    - run: python ${{ github.action_path }}/repack.py ${{ inputs.sdk }} ${{ inputs.tag }} ${{ inputs.dir }} out --bundle-frameworks
+      shell: bash
+      if: inputs.bundle_frameworks == 'true'

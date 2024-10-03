@@ -1,0 +1,18 @@
+name: Check if a release exists
+description: A GitHub action to check if a release exists
+inputs:
+  repository:
+    description: Target repo
+    default: ${{ github.repository }}
+  token:
+    description: Target repo token with write access
+    default: ${{ github.token }}
+  tag:
+    description: Release tag (e.g. v10.4.0)
+    required: true
+outputs:
+  exists:
+    description: Return true if a matching release was found, false otherwise
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
