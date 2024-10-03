@@ -285,7 +285,9 @@ def extract_wheel_zip(zip: Path, asset_name: str):
 
 
 try:
-    main(args.input_dir, args.bundle_frameworks)
+    zip_dir = Path(args.input_dir)
+    with_frameworks = args.bundle_frameworks
+    main(zip_dir, with_frameworks)
 except Exception:
     print("-" * 60)
     traceback.print_exc(file=sys.stderr)
